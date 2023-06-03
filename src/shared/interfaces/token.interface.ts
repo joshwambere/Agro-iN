@@ -8,3 +8,4 @@ export interface tokensType {
   accessToken: string;
   refreshToken: string;
 }
+

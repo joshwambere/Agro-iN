@@ -1,0 +1,49 @@
+version: "3.7"
+services:
+  server:
+    build:
+      context: ./
+      target: production-build-stage
+      dockerfile: Dockerfile
+    container_name: server
+    ports:
+      - ${PORT}:${PORT}
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - DB_HOST=db
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=${DB_PORT}
+      - DB_SYNCHRONIZE=${DB_SYNCHRONIZE}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDER_EMAIL=${SENDER_EMAIL}
+      - JWT_SECRET=${JWT_SECRET}
+      - OTP_EXPIRES_IN=${OTP_EXPIRES_IN}
+      - STRIPE_KEY=${STRIPE_KEY}
+    restart: always
+    networks:
+      - backend
+    depends_on:
+      - db
+  db:
+    image: postgres
+    container_name: db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+    restart: always
+
+networks:
+  backend:
+    driver: bridge

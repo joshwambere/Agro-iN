@@ -1,0 +1,46 @@
+name: Deploy Docker Compose to DigitalOcean
+
+on:
+  push:
+    branches: [ feature/v2 ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DB_USER: ${{ secrets.POSTGRES_USER }}
+      DB_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      DB_NAME: ${{ secrets.POSTGRES_DB }}
+      DB_HOST: ${{ secrets.POSTGRES_HOST }}
+      DB_PORT: ${{ secrets.POSTGRES_PORT }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: secure copy docker compose file to DigitalOcean Droplet
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DIGITALOCEAN_DROPLET_IP }}
+          username: ${{ secrets.DIGITALOCEAN_DROPLET_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: docker-compose.prod.yml
+          target: /
+          timeout: 300s
+
+      - name: Build and Push Docker Image to DigitalOcean Container Registry
+        run: |
+          docker-compose -f docker-compose.prod.yml build --no-cache
+          doctl auth init --access-token ${{ secrets.DIGITALOCEAN_REGISTRY_TOKEN }}
+          doctl registry login
+          docker tag ${{ secrets.DOCKER_IMAGE_NAME }}:${{ secrets.DOCKER_IMAGE_TAG }} registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY_USERNAME }}/${{ secrets.DOCKER_IMAGE_NAME }}:${{ secrets.DOCKER_IMAGE_TAG }}
+          docker push registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY_USERNAME }}/${{ secrets.DOCKER_IMAGE_NAME }}:${{ secrets.DOCKER_IMAGE_TAG }}
+      - name: SSH into DigitalOcean Droplet and Deploy Docker Compose
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DIGITALOCEAN_DROPLET_IP }}
+          username: ${{ secrets.DIGITALOCEAN_DROPLET_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            tar -xvf *.tar.gz
+            docker-compose -f docker-compose.prod.yml pull
+            docker-compose -f docker-compose.prod.yml up -d
+          

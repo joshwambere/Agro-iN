@@ -1,0 +1,63 @@
+version: "3.7"
+services:
+  server:
+    build:
+      context: ./
+      target: development-build-stage
+      dockerfile: Dockerfile
+    container_name: server
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - DB_HOST=db
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=${DB_PORT}
+      - DB_SYNCHRONIZE=${DB_SYNCHRONIZE}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDER_EMAIL=${SENDER_EMAIL}
+      - JWT_SECRET=${JWT_SECRET}
+      - OTP_EXPIRES_IN=${OTP_EXPIRES_IN}
+      - STRIPE_KEY=${STRIPE_KEY}
+    restart: always
+    networks:
+      - backend
+    depends_on:
+      - db
+  db:
+    image: postgres
+    container_name: db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+    restart: always
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt/live/galileo-backend.johnson.rw/fullchain.pem:/etc/ssl/certs/fullchain.pem:ro
+      - /etc/letsencrypt/live/galileo-backend.johnson.rw/privkey.pem:/etc/ssl/certs/privkey.pem:ro
+    depends_on:
+      - server
+    networks:
+      - backend
+    restart: "unless-stopped"
+
+networks:
+  backend:
+    driver: bridge

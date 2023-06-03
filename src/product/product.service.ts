@@ -55,6 +55,7 @@ export class ProductService {
     updateProductDto: UpdateProductDto,
   ): Promise<Product> {
     const product = await this.findOne(id);
+    updateProductDto.type = product.type;
     return await this.productRepository.save({
       ...product,
       ...updateProductDto,

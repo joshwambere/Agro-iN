@@ -27,10 +27,7 @@ export class Product {
   price: number;
   @Column({ nullable: false, unique: false, type: 'numeric' })
   quantity: number;
-  @ManyToMany(() => Order, (order) => order.products)
-  @JoinTable()
-  orders: Order[];
-
+  @Column({ nullable: false, unique: false, type: 'boolean', default: false })
   isDeleted: boolean;
   @UpdateDateColumn({
     type: 'timestamptz',

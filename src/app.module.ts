@@ -10,6 +10,7 @@ import { join } from 'path';
 import { getEnvs } from './shared/configs/env/helper/env.helper';
 import { ProductModule } from './product/product.module';
 import { OrderModule } from './order/order.module';
+import { RuleModule } from './rule/rule.module';
 
 const envFilePath: string | any = getEnvs(join(__dirname, '..')) || process.env;
 
@@ -21,6 +22,7 @@ const envFilePath: string | any = getEnvs(join(__dirname, '..')) || process.env;
     AuthModule,
     ProductModule,
     OrderModule,
+    RuleModule,
   ],
   controllers: [AppController],
   providers: [AppService],
